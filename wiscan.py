@@ -1,55 +1,67 @@
-import subprocess
+import os
 
-# create WISCAN folder if it does not exist
+import time
 
-subprocess.run(["mkdir", "-p", "WISCAN"])
+import pywifi
 
-# run command to scan all WiFi networks
+from pywifi import const
 
-result = subprocess.run(["termux-wifi-scaninfo"], stdout=subprocess.PIPE)
+def wifi_scan(duration):
 
-# decode the output and split into lines
+    # Create a Wi-Fi object
 
-output = result.stdout.decode().split("\n")
+    wifi = pywifi.PyWiFi()
 
-# open scan.txt file in write mode
+    # Get the first interface (should be the only one)
 
-with open("WISCAN/scan.txt", "w") as f:
+    iface = wifi.interfaces()[0]
 
-    for line in output:
+    # Turn on Wi-Fi radio
 
-        # check if the line contains details of a WiFi network
+    iface.radio_on()
 
-        if "SSID" in line:
+    # Begin the scan
 
-            ssid = line.split(": ")[1].strip()
+    iface.scan()
 
-        elif "BSSID" in line:
+    # Wait for the scan to complete
 
-            bssid = line.split(": ")[1].strip()
+    time.sleep(duration)
 
-        elif "Capabilities" in line:
+    # Get scan results
 
-            cap = line.split(": ")[1].strip()
+    results = iface.scan_results()
 
-            # check if the network is secured
+    # Save results to file
 
-            if "WEP" in cap:
+    if not os.path.exists("WISCAN"):
 
-                security = "WEP"
+        os.mkdir("WISCAN")
 
-            elif "WPA" in cap:
+    with open("WISCAN/scan.txt", "w") as f:
 
-                security = "WPA"
+        for r in results:
 
-            else:
+            f.write("SSID: {}\n".format(r.ssid))
 
-                security = "Open"
+            f.write("BSSID: {}\n".format(r.bssid))
 
-        elif "Signal level" in line:
+            f.write("Signal Strength: {} dBm\n".format(r.signal))
 
-            signal = line.split(": ")[1].strip()
+            f.write("Security: {}\n".format(r.akm[0]))
 
-            # write the details to the file
+            f.write("Vulnerability: {}\n\n".format(r.akm[-1]))
 
-            f.write(f"SSID: {ssid}\nBSSID: {bssid}\nSecurity: {security}\nSignal: {signal}\n\n")
+    # Turn off Wi-Fi radio
+
+    iface.radio_off()
+
+# Get scan duration input from user
+
+duration = int(input("Enter scan duration in seconds: "))
+
+# Run the scan and save results to file
+
+wifi_scan(duration)
+
+print("Scan completed! Results saved to WISCAN/scan.txt")
