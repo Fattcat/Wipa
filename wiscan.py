@@ -1,67 +1,34 @@
-import os
+import wifi
 
 import time
 
-import pywifi
+while True:
 
-from pywifi import const
+    # získa zoznam sietí WiFi
 
-def wifi_scan(duration):
+    networks = wifi.scan()
 
-    # Create a Wi-Fi object
+    # otvorí textový súbor SCAN.txt
 
-    wifi = pywifi.PyWiFi()
+    with open("SCAN.txt", "w") as file:
 
-    # Get the first interface (should be the only one)
+        # pre každú sieť vypíše informácie a zapíše ich do súboru
 
-    iface = wifi.interfaces()[0]
+        for network in networks:
 
-    # Turn on Wi-Fi radio
+            ssid = network.ssid
 
-    iface.radio_on()
+            encryption = network.encryption
 
-    # Begin the scan
+            signal = network.signal
 
-    iface.scan()
+            mac_address = network.address
 
-    # Wait for the scan to complete
+            print(f"SSID: {ssid}, Encryption: {encryption}, Signal Strength: {signal}, MAC Address: {mac_address}")
 
-    time.sleep(duration)
+            file.write(f"SSID: {ssid}, Encryption: {encryption}, Signal Strength: {signal}, MAC Address: {mac_address}\n")
 
-    # Get scan results
+    # počká 6 sekúnd pred ďalším skenovaním
 
-    results = iface.scan_results()
+    time.sleep(6)
 
-    # Save results to file
-
-    if not os.path.exists("WISCAN"):
-
-        os.mkdir("WISCAN")
-
-    with open("WISCAN/scan.txt", "w") as f:
-
-        for r in results:
-
-            f.write("SSID: {}\n".format(r.ssid))
-
-            f.write("BSSID: {}\n".format(r.bssid))
-
-            f.write("Signal Strength: {} dBm\n".format(r.signal))
-
-            f.write("Security: {}\n".format(r.akm[0]))
-
-            f.write("Vulnerability: {}\n\n".format(r.akm[-1]))
-
-    # Turn off Wi-Fi radio
-
-    iface.radio_off()
-
-# Get scan duration input from user
-
-duration = int(input("Enter scan duration in seconds: "))
-
-# Run the scan and save results to file
-
-wifi_scan(duration)
-
-print("Scan completed! Results saved to WISCAN/scan.txt")
